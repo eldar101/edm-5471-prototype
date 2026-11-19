@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="data:,">
+  <title>Device update stages — UX prototype</title>
+  <link rel="stylesheet" href="https://unpkg.com/@patternfly/patternfly@6/patternfly.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/@patternfly/patternfly@6/patternfly-addons.min.css">
+  <style>
+    :root { font: 14px/1.45 system-ui, sans-serif; color: #151515; background: #f4f4f4; }
+    * { box-sizing: border-box; }
+    button, select { font: inherit; }
+    button { cursor: pointer; }
+    button:focus-visible, select:focus-visible, a:focus-visible { outline: 3px solid #0066cc; outline-offset: 2px; }
+    .skip { position: absolute; left: -9999px; }
+    .skip:focus { left: 1rem; top: 1rem; z-index: 20; background: white; padding: .5rem; }
+    .review-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; padding: .7rem 1.25rem; background: #e7f1fa; border-bottom: 1px solid #b8d4ec; }
+    .review-bar strong { color: #004b95; }
+    .review-bar label { display: flex; align-items: center; gap: .35rem; }
+    .review-bar select, .toolbar select { padding: .4rem .55rem; border: 1px solid #8a8d90; background: white; border-radius: 3px; }
+    .review-note { color: #3d5367; margin-left: auto; }
+    .masthead { height: 56px; display: flex; align-items: center; padding: 0 1.4rem; color: white; background: #151515; gap: 1.4rem; }
+    .brand { font-size: 1.12rem; font-weight: 700; white-space: nowrap; }
+    .product { color: #d2d2d2; }
+    .user { margin-left: auto; color: #d2d2d2; }
+    .shell { display: grid; grid-template-columns: 220px minmax(0, 1fr); min-height: calc(100vh - 105px); }
+    nav { background: white; border-right: 1px solid #d2d2d2; padding: 1.2rem .7rem; }
+    nav .section { color: #6a6e73; font-size: .8rem; font-weight: 700; margin: .3rem .7rem .8rem; text-transform: uppercase; }
+    nav a { display: block; padding: .65rem .8rem; color: #151515; text-decoration: none; border-radius: 3px; }
+    nav a.current { background: #e7f1fa; color: #004b95; font-weight: 700; border-left: 3px solid #06c; }
+    nav a:not(.current) { color: #6a6e73; }
+    main { padding: 1.8rem 2rem 3rem; min-width: 0; }
+    h1 { margin: 0 0 .35rem; font-size: 1.8rem; }
+    h2 { font-size: 1.15rem; margin: 0; }
+    p.subtle { color: #6a6e73; margin: 0 0 1.4rem; }
+    .card { background: white; border: 1px solid #d2d2d2; box-shadow: 0 1px 2px #0001; margin-bottom: 1rem; }
+    .card-head { padding: 1rem 1.2rem; border-bottom: 1px solid #eee; }
+    .card-body { padding: 1.2rem; }
+    .toolbar { display: flex; flex-wrap: wrap; gap: 1rem; align-items: end; padding: 1rem 1.2rem; }
+    .toolbar label { display: flex; flex-direction: column; gap: .25rem; font-weight: 600; }
+    .toolbar .result { margin-left: auto; color: #6a6e73; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th { color: #4f5255; font-size: .85rem; text-align: left; background: #fafafa; }
+    th, td { padding: .9rem 1rem; border-bottom: 1px solid #ededed; vertical-align: middle; }
+    tr:last-child td { border-bottom: 0; }
+    .device-link, .back { border: 0; background: none; padding: 0; color: #0066cc; text-decoration: underline; }
+    .name { font-weight: 600; }
+    .muted { color: #6a6e73; }
+    .status { display: inline-flex; align-items: center; gap: .35rem; white-space: nowrap; font-weight: 600; }
+    .status::before { content: ""; width: .65rem; height: .65rem; border-radius: 50%; background: #2b9af3; }
+    .status.out-of-date::before { background: #f0ab00; }
+    .status.up-to-date::before { background: #3e8635; }
+    .status.unknown::before { background: #8a8d90; }
+    .update-content { display: inline-flex; flex-wrap: wrap; align-items: center; column-gap: .55rem; row-gap: .25rem; }
+    .update-content.below { display: inline-grid; grid-template-columns: auto auto; align-items: center; }
+    .update-content.below .stage { grid-column: 1 / -1; grid-row: 2; }
+    .update-content.below .info { grid-column: 2; grid-row: 1; }
+    .stage { display: inline-block; color: #004b95; white-space: nowrap; }
+    .stage.unavailable { color: #4f5255; }
+    .info { position: relative; display: inline-flex; align-items: center; }
+    .info-button { border: 0; background: none; color: #0066cc; font-size: 1rem; padding: .15rem .3rem; }
+    .popover { position: absolute; z-index: 10; top: 1.8rem; left: 0; width: 280px; padding: .75rem; background: white; border: 1px solid #8a8d90; box-shadow: 0 4px 12px #0003; font-weight: 400; white-space: normal; }
+    .popover[hidden] { display: none; }
+    .pagination { display: flex; justify-content: flex-end; gap: .75rem; align-items: center; padding: .7rem 1.2rem; border-top: 1px solid #eee; }
+    .pagination button, .tabs button { border: 1px solid #8a8d90; background: white; padding: .35rem .6rem; border-radius: 3px; }
+    .pagination button:disabled { cursor: default; color: #aaa; }
+    .back-row { margin-bottom: 1rem; }
+    .details-top { display: flex; flex-wrap: wrap; align-items: baseline; gap: .5rem 1.5rem; }
+    .tabs { display: flex; gap: .2rem; border-bottom: 1px solid #d2d2d2; margin: 1rem 0 0; }
+    .tabs button { border: 0; border-bottom: 3px solid transparent; border-radius: 0; padding: .75rem 1rem; }
+    .tabs button.active { border-bottom-color: #06c; color: #004b95; font-weight: 700; }
+    .details-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(240px, 1fr); gap: 1rem; margin-top: 1rem; }
+    .field { display: grid; grid-template-columns: minmax(120px, 1fr) 2fr; gap: 1rem; padding: .75rem 0; border-bottom: 1px solid #eee; }
+    .field:last-child { border-bottom: 0; }
+    .field dt { color: #4f5255; }
+    .field dd { margin: 0; }
+    .event { padding: 1rem 0; border-bottom: 1px solid #eee; }
+    .event:last-child { border-bottom: 0; }
+    .event-title { font-weight: 650; }
+    .event time { color: #6a6e73; font-size: .85rem; margin-left: .5rem; }
+    .event p { margin: .25rem 0 0; }
+    .empty { padding: 3rem; text-align: center; color: #6a6e73; }
+    @media (max-width: 800px) { .shell { grid-template-columns: 1fr; } nav { display: none; } main { padding: 1rem; } .details-grid { grid-template-columns: 1fr; } .review-note { margin-left: 0; } }
+  </style>
+</head>
+<body>
+  <a class="skip" href="#content">Skip to content</a>
+  <div class="review-bar" aria-label="Prototype review controls">
+    <strong>UX prototype · Update stages</strong>
+    <label>Placement <select id="placement"><option value="inline">A · Inline label</option><option value="below">B · Label below</option></select></label>
+    <label>Scenario <select id="scenario">
+      <option value="default">Mixed device list</option>
+      <option value="staged">Staged, waiting on policy</option>
+      <option value="preparing">Preparing, shown as Downloading</option>
+      <option value="rollback-reboot">Rollback reboot</option>
+      <option value="older-reboot">Older agent, stage unavailable</option>
+      <option value="failure">Terminal update failure</option>
+      <option value="disconnected">Disconnected device</option>
+      <option value="filter-staged">Filter finds off-page Staged device</option>
+    </select></label>
+    <span class="review-note">Mock data · Compare placement and wording with UX</span>
+  </div>
+  <header class="masthead"><span class="brand">Edge Manager</span><span class="product">Device management</span><span class="user">Operator</span></header>
+  <div class="shell"><nav aria-label="Primary"><div class="section">Manage</div><a href="#" class="current">Devices</a><a href="#" aria-disabled="true">Fleets</a><a href="#" aria-disabled="true">Repositories</a></nav><main id="content" tabindex="-1"></main></div>
+  <script>
+    const devices = [
+      { id: 'edge-gateway-01', fleet: 'East gateways', status: 'Updating', stage: 'Downloading', info: 'Checking the update and preparing dependencies. Downloads will start when needed.', event: 'Update preparation started', message: 'The device is checking the update and preparing dependencies.' },
+      { id: 'store-kiosk-12', fleet: 'Store kiosks', status: 'Updating', stage: 'Applying', info: 'Applying the downloaded update to the device.', event: 'Update stage changed', message: 'The device is applying the update.' },
+      { id: 'edge-gateway-02', fleet: 'East gateways', status: 'Updating', stage: 'Rebooting', info: 'Rebooting to activate the update. Completion has not yet been confirmed.', event: 'Update stage changed', message: 'The device is rebooting to activate the update.' },
+      { id: 'factory-sensor-08', fleet: 'Factory sensors', status: 'Updating', stage: 'Rolling back', info: 'Rolling back to the previous version after an update problem.', event: 'Rollback started', message: 'The device is returning to its previous version.' },
+      { id: 'store-kiosk-17', fleet: 'Store kiosks', status: 'Updating', stage: null, info: 'This agent has not reported a supported update stage.', event: 'Update in progress', message: 'The device is updating; detailed stage information is unavailable.' },
+      { id: 'edge-gateway-03', fleet: 'East gateways', status: 'Up-to-date', stage: null, info: 'The device is up to date.', event: 'Update completed', message: 'The device finished its update.' },
+      { id: 'factory-sensor-09', fleet: 'Factory sensors', status: 'Updating', stage: 'Staged', info: 'The update is downloaded and waiting for the maintenance window before it is applied.', event: 'Update stage changed', message: 'Update stage: Downloading → Staged. The update is waiting to be applied.' },
+      { id: 'lab-node-04', fleet: 'Lab devices', status: 'Out-of-date', stage: null, info: 'The update failed. The device remains out of date.', event: 'Update failed', message: 'The device could not apply the requested update.' },
+      { id: 'factory-sensor-10', fleet: 'Factory sensors', status: 'Updating', stage: 'Rolling back', info: 'Rebooting into the previous OS version. Rollback is still in progress.', event: 'Rollback reboot started', message: 'The device is rebooting into its previous OS version.' },
+      { id: 'store-kiosk-18', fleet: 'Store kiosks', status: 'Updating', stage: null, info: 'This agent version cannot confirm whether this reboot is forward or rollback.', event: 'Update in progress', message: 'The device is rebooting; update direction is unavailable.' },
+      { id: 'edge-gateway-04', fleet: 'East gateways', status: 'Unknown', stage: null, info: 'The device is disconnected. Current update information is unavailable.', event: 'Device disconnected', message: 'The device has stopped reporting status.' },
+    ];
+    const scenarioDevice = { staged: 'factory-sensor-09', preparing: 'edge-gateway-01', 'rollback-reboot': 'factory-sensor-10', 'older-reboot': 'store-kiosk-18', failure: 'lab-node-04', disconnected: 'edge-gateway-04' };
+    const stages = ['Downloading', 'Staged', 'Applying', 'Rebooting', 'Rolling back'];
+    const params = new URLSearchParams(location.search);
+    const state = { scenario: params.get('scenario') || 'default', placement: params.get('placement') === 'below' ? 'below' : 'inline', view: 'list', tab: 'overview', selected: null, stageFilter: '', statusFilter: 'all', page: 1 };
+    const content = document.getElementById('content');
+    const placement = document.getElementById('placement');
+    const scenario = document.getElementById('scenario');
+    const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
+
+    function applyScenario(name) {
+      state.scenario = Array.from(scenario.options).some((option) => option.value === name) ? name : 'default';
+      state.selected = scenarioDevice[state.scenario] || null;
+      state.view = state.selected ? 'detail' : 'list';
+      state.tab = 'overview';
+      state.stageFilter = state.scenario === 'filter-staged' ? 'Staged' : '';
+      state.statusFilter = 'all';
+      state.page = 1;
+      scenario.value = state.scenario;
+      params.set('scenario', state.scenario);
+      if (location.protocol !== 'file:') history.replaceState(null, '', `${location.pathname}?${params}`);
+      render();
+    }
+
+    function statusHtml(device) {
+      const statusClass = device.status.toLowerCase().replace(/[^a-z]+/g, '-');
+      const stage = device.status === 'Updating' ? `<span class="stage${device.stage ? '' : ' unavailable'}">${escapeHtml(device.stage || 'Stage unavailable')}</span>` : '';
+      return `<span class="update-content ${state.placement}"><span class="status ${statusClass}">${escapeHtml(device.status)}</span>${stage}<span class="info"><button class="info-button" type="button" data-info aria-label="Show update status explanation for ${escapeHtml(device.id)}" aria-expanded="false">ⓘ</button><span class="popover" role="status" hidden><strong>${escapeHtml(device.status)}</strong><br>${escapeHtml(device.info)}</span></span></span>`;
+    }
+
+    function listHtml() {
+      const matching = devices.filter((device) => (state.statusFilter === 'all' || device.status === state.statusFilter) && (!state.stageFilter || device.stage === state.stageFilter));
+      const pageSize = 5;
+      const pageCount = Math.max(1, Math.ceil(matching.length / pageSize));
+      state.page = Math.min(state.page, pageCount);
+      const shown = matching.slice((state.page - 1) * pageSize, state.page * pageSize);
+      return `<h1>Devices</h1><p class="subtle">View device health and update status.</p><section class="card" aria-label="Device list"><div class="toolbar"><label>Update status<select id="status-filter"><option value="all">All statuses</option>${['Updating', 'Out-of-date', 'Up-to-date', 'Unknown'].map((value) => `<option value="${value}" ${state.statusFilter === value ? 'selected' : ''}>${value}</option>`).join('')}</select></label><label>Update stage<select id="stage-filter"><option value="">All stages</option>${stages.map((value) => `<option value="${value}" ${state.stageFilter === value ? 'selected' : ''}>${value}</option>`).join('')}</select></label><span class="result" aria-live="polite">${matching.length} matching device${matching.length === 1 ? '' : 's'}</span></div><div class="table-wrap"><table><thead><tr><th scope="col">Device</th><th scope="col">Fleet</th><th scope="col">Device status</th><th scope="col">Update status</th></tr></thead><tbody>${shown.length ? shown.map((device) => `<tr><td><button type="button" class="device-link name" data-device="${device.id}">${escapeHtml(device.id)}</button></td><td>${escapeHtml(device.fleet)}</td><td><span class="status ${device.status === 'Unknown' ? 'unknown' : 'up-to-date'}">${device.status === 'Unknown' ? 'Disconnected' : 'Online'}</span></td><td>${statusHtml(device)}</td></tr>`).join('') : '<tr><td colspan="4"><div class="empty">No devices match these filters.</div></td></tr>'}</tbody></table></div><div class="pagination"><button id="prev-page" type="button" ${state.page === 1 ? 'disabled' : ''}>Previous</button><span>Page ${state.page} of ${pageCount}</span><button id="next-page" type="button" ${state.page === pageCount ? 'disabled' : ''}>Next</button></div></section>`;
+    }
+
+    function detailHtml(device) {
+      const events = [
+        { title: device.event, message: device.message, time: 'Today, 10:42' },
+        { title: 'Update requested', message: 'A new device specification was assigned.', time: 'Today, 10:31' },
+      ];
+      const panel = state.tab === 'events'
+        ? `<section class="card"><div class="card-head"><h2>Events</h2></div><div class="card-body"><p class="subtle">All types</p>${events.map((event) => `<div class="event"><span class="event-title">${escapeHtml(event.title)}</span><time>${escapeHtml(event.time)}</time><p>${escapeHtml(event.message)}</p></div>`).join('')}</div></section>`
+        : `<div class="details-grid"><section class="card"><div class="card-head"><h2>Status</h2></div><div class="card-body"><dl><div class="field"><dt>Application status</dt><dd><span class="status up-to-date">Healthy</span></dd></div><div class="field"><dt>Device status</dt><dd><span class="status ${device.status === 'Unknown' ? 'unknown' : 'up-to-date'}">${device.status === 'Unknown' ? 'Disconnected' : 'Online'}</span></dd></div><div class="field"><dt>Update status</dt><dd>${statusHtml(device)}</dd></div><div class="field"><dt>Integrity status</dt><dd><span class="muted">Not reported</span></dd></div></dl></div></section><section class="card"><div class="card-head"><h2>Device information</h2></div><div class="card-body"><dl><div class="field"><dt>Fleet</dt><dd>${escapeHtml(device.fleet)}</dd></div><div class="field"><dt>Last seen</dt><dd>${device.status === 'Unknown' ? 'Unavailable' : 'A few seconds ago'}</dd></div></dl></div></section></div>`;
+      return `<div class="back-row"><button class="back" id="back-list" type="button">← Back to devices</button></div><div class="details-top"><h1>${escapeHtml(device.id)}</h1><span class="muted">${escapeHtml(device.fleet)}</span></div><div class="tabs" role="tablist" aria-label="Device details"><button type="button" role="tab" id="tab-overview" aria-selected="${state.tab === 'overview'}" class="${state.tab === 'overview' ? 'active' : ''}">Overview</button><button type="button" role="tab" id="tab-events" aria-selected="${state.tab === 'events'}" class="${state.tab === 'events' ? 'active' : ''}">Events</button></div>${panel}`;
+    }
+
+    function render() {
+      const device = devices.find((item) => item.id === state.selected);
+      content.innerHTML = state.view === 'detail' && device ? detailHtml(device) : listHtml();
+      document.querySelectorAll('[data-info]').forEach((button) => button.addEventListener('click', () => {
+        const box = button.nextElementSibling;
+        const open = box.hidden;
+        document.querySelectorAll('.popover').forEach((item) => { item.hidden = true; });
+        document.querySelectorAll('[data-info]').forEach((item) => item.setAttribute('aria-expanded', 'false'));
+        box.hidden = !open;
+        button.setAttribute('aria-expanded', String(open));
+      }));
+      document.querySelectorAll('[data-device]').forEach((button) => button.addEventListener('click', () => { state.selected = button.dataset.device; state.view = 'detail'; state.tab = 'overview'; render(); content.focus(); }));
+      document.getElementById('status-filter')?.addEventListener('change', (event) => { state.statusFilter = event.target.value; state.page = 1; render(); });
+      document.getElementById('stage-filter')?.addEventListener('change', (event) => { state.stageFilter = event.target.value; state.page = 1; render(); });
+      document.getElementById('prev-page')?.addEventListener('click', () => { state.page -= 1; render(); });
+      document.getElementById('next-page')?.addEventListener('click', () => { state.page += 1; render(); });
+      document.getElementById('back-list')?.addEventListener('click', () => { state.view = 'list'; render(); content.focus(); });
+      document.getElementById('tab-overview')?.addEventListener('click', () => { state.tab = 'overview'; render(); });
+      document.getElementById('tab-events')?.addEventListener('click', () => { state.tab = 'events'; render(); });
+    }
+
+    placement.value = state.placement;
+    placement.addEventListener('change', () => { state.placement = placement.value; params.set('placement', state.placement); if (location.protocol !== 'file:') history.replaceState(null, '', `${location.pathname}?${params}`); render(); });
+    scenario.addEventListener('change', () => applyScenario(scenario.value));
+    document.addEventListener('keydown', (event) => { if (event.key === 'Escape') document.querySelectorAll('.popover').forEach((item) => { item.hidden = true; }); });
+    applyScenario(state.scenario);
+  </script>
+</body>
+</html>
