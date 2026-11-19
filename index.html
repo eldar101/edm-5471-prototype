@@ -20,10 +20,12 @@
     .review-bar label { display: flex; align-items: center; gap: .35rem; }
     .review-bar select, .toolbar select { padding: .4rem .55rem; border: 1px solid #8a8d90; background: white; border-radius: 3px; }
     .review-note { color: #3d5367; margin-left: auto; }
+    .context-note { padding: .7rem 2rem; background: #fff8e5; border-bottom: 1px solid #f0c674; color: #59410b; }
     .masthead { height: 56px; display: flex; align-items: center; padding: 0 1.4rem; color: white; background: #151515; gap: 1.4rem; }
     .brand { font-size: 1.12rem; font-weight: 700; white-space: nowrap; }
     .product { color: #d2d2d2; }
     .user { margin-left: auto; color: #d2d2d2; }
+    .page-navigation { padding: .65rem 2rem; background: white; border-bottom: 1px solid #d2d2d2; color: #4f5255; }
     .shell { display: grid; grid-template-columns: 220px minmax(0, 1fr); min-height: calc(100vh - 105px); }
     nav { background: white; border-right: 1px solid #d2d2d2; padding: 1.2rem .7rem; }
     nav .section { color: #6a6e73; font-size: .8rem; font-weight: 700; margin: .3rem .7rem .8rem; text-transform: uppercase; }
@@ -40,6 +42,7 @@
     .toolbar { display: flex; flex-wrap: wrap; gap: 1rem; align-items: end; padding: 1rem 1.2rem; }
     .toolbar label { display: flex; flex-direction: column; gap: .25rem; font-weight: 600; }
     .toolbar .result { margin-left: auto; color: #6a6e73; }
+    .filter-chip { display: inline-block; margin: 0 1.2rem .8rem; padding: .3rem .65rem; background: #e7f1fa; color: #004b95; border-radius: 1rem; }
     .table-wrap { overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; }
     th { color: #4f5255; font-size: .85rem; text-align: left; background: #fafafa; }
@@ -100,10 +103,11 @@
       <option value="disconnected">Disconnected device</option>
       <option value="filter-staged">Filter finds off-page Staged device</option>
     </select></label>
-    <span class="review-note">Mock data · Compare placement and wording with UX</span>
+    <span class="review-note">Mock data · Stage filter placement and stepper route TBD</span>
   </div>
-  <header class="masthead"><span class="brand">Edge Manager</span><span class="product">Device management</span><span class="user">Operator</span></header>
-  <div class="shell"><nav aria-label="Primary"><div class="section">Manage</div><a href="#" class="current">Devices</a><a href="#" aria-disabled="true">Fleets</a><a href="#" aria-disabled="true">Repositories</a></nav><main id="content" tabindex="-1"></main></div>
+  <header class="masthead"><span aria-hidden="true">☰</span><span class="brand">Red Hat Edge Manager</span><span class="product">Device management</span><span class="user">⌕ &nbsp; ◌ &nbsp; Operator ▾</span></header>
+  <div class="context-note">Full-page review mock based on the standalone Devices UI. Stage controls and stepper behavior are exploratory.</div>
+  <div class="shell"><nav aria-label="Primary"><div class="section">Navigation</div><a href="#" aria-disabled="true">Overview</a><a href="#" aria-disabled="true">Fleets</a><a href="#" class="current">Devices</a><a href="#" aria-disabled="true">Software Catalog</a><a href="#" aria-disabled="true">Repositories</a></nav><div><div class="page-navigation">Device management &nbsp; / &nbsp; Devices</div><main id="content" tabindex="-1"></main></div></div>
   <script>
     const devices = [
       { id: 'edge-gateway-01', fleet: 'East gateways', status: 'Updating', stage: 'Downloading', info: 'Checking the update and preparing dependencies. Downloads will start when needed.', event: 'Update preparation started', message: 'The device is checking the update and preparing dependencies.' },
@@ -153,7 +157,22 @@
       const pageCount = Math.max(1, Math.ceil(matching.length / pageSize));
       state.page = Math.min(state.page, pageCount);
       const shown = matching.slice((state.page - 1) * pageSize, state.page * pageSize);
-      return `<h1>Devices</h1><p class="subtle">View device health and update status.</p><section class="card" aria-label="Device list"><div class="toolbar"><label>Update status<select id="status-filter"><option value="all">All statuses</option>${['Updating', 'Out-of-date', 'Up-to-date', 'Unknown'].map((value) => `<option value="${value}" ${state.statusFilter === value ? 'selected' : ''}>${value}</option>`).join('')}</select></label><label>Update stage<select id="stage-filter"><option value="">All stages</option>${stages.map((value) => `<option value="${value}" ${state.stageFilter === value ? 'selected' : ''}>${value}</option>`).join('')}</select></label><span class="result" aria-live="polite">${matching.length} matching device${matching.length === 1 ? '' : 's'}</span></div><div class="table-wrap"><table><thead><tr><th scope="col">Device</th><th scope="col">Fleet</th><th scope="col">Device status</th><th scope="col">Update status</th></tr></thead><tbody>${shown.length ? shown.map((device) => `<tr><td><button type="button" class="device-link name" data-device="${device.id}">${escapeHtml(device.id)}</button></td><td>${escapeHtml(device.fleet)}</td><td><span class="status ${device.status === 'Unknown' ? 'unknown' : 'up-to-date'}">${device.status === 'Unknown' ? 'Disconnected' : 'Online'}</span></td><td>${statusHtml(device)}</td></tr>`).join('') : '<tr><td colspan="4"><div class="empty">No devices match these filters.</div></td></tr>'}</tbody></table></div><div class="pagination"><button id="prev-page" type="button" ${state.page === 1 ? 'disabled' : ''}>Previous</button><span>Page ${state.page} of ${pageCount}</span><button id="next-page" type="button" ${state.page === pageCount ? 'disabled' : ''}>Next</button></div></section>`;
+      return `<h1>Devices</h1>
+        <p class="subtle">View and manage your enrolled edge devices. Monitor device status, configurations, and fleet assignments.</p>
+        <section class="card" aria-label="Enrollment requests"><div class="card-head"><h2>Enrollment requests <span class="muted">(2 pending)</span></h2></div><div class="card-body">Review new devices before approving enrollment. <span class="muted">(Mock context)</span></div></section>
+        <section class="card" aria-label="Device list"><div class="card-head"><h2>Enrolled devices</h2></div>
+          <div class="toolbar"><label>Filter by status
+            <select id="combined-filter" aria-label="Filter by status or update stage">
+              <option value="all">All statuses</option>
+              <optgroup label="Update status">${['Updating', 'Out-of-date', 'Up-to-date', 'Unknown'].map((value) => `<option value="status:${value}" ${state.statusFilter === value ? 'selected' : ''}>${value}</option>`).join('')}</optgroup>
+              <optgroup label="Update stage · exploratory">${stages.map((value) => `<option value="stage:${value}" ${state.stageFilter === value ? 'selected' : ''}>${value}</option>`).join('')}</optgroup>
+            </select></label><button type="button" disabled title="Context only">Filter by feature</button><button type="button" disabled title="Context only">Search by name, label, or fleet</button>
+            <span class="result" aria-live="polite">${matching.length} matching device${matching.length === 1 ? '' : 's'}</span></div>
+          ${state.stageFilter ? `<span class="filter-chip">Update stage: ${escapeHtml(state.stageFilter)} · exploratory placement</span>` : ''}
+          <div class="table-wrap"><table><thead><tr><th scope="col">Alias</th><th scope="col">Name</th><th scope="col">Fleet</th><th scope="col">Application status</th><th scope="col">Device status</th><th scope="col">Update status</th></tr></thead><tbody>
+          ${shown.length ? shown.map((device) => `<tr><td>${escapeHtml(device.id.replace(/-/g, ' '))}</td><td><button type="button" class="device-link name" data-device="${device.id}">${escapeHtml(device.id)}</button></td><td>${escapeHtml(device.fleet)}</td><td><span class="status up-to-date">Healthy</span></td><td><span class="status ${device.status === 'Unknown' ? 'unknown' : 'up-to-date'}">${device.status === 'Unknown' ? 'Disconnected' : 'Online'}</span></td><td>${statusHtml(device)}</td></tr>`).join('') : '<tr><td colspan="6"><div class="empty">No devices match these filters.</div></td></tr>'}</tbody></table></div>
+          <div class="pagination"><button id="prev-page" type="button" ${state.page === 1 ? 'disabled' : ''}>Previous</button><span>Page ${state.page} of ${pageCount}</span><button id="next-page" type="button" ${state.page === pageCount ? 'disabled' : ''}>Next</button></div>
+        </section>`;
     }
 
     function detailHtml(device) {
@@ -164,7 +183,7 @@
       const panel = state.tab === 'events'
         ? `<section class="card"><div class="card-head"><h2>Events</h2></div><div class="card-body"><p class="subtle">All types</p>${events.map((event) => `<div class="event"><span class="event-title">${escapeHtml(event.title)}</span><time>${escapeHtml(event.time)}</time><p>${escapeHtml(event.message)}</p></div>`).join('')}</div></section>`
         : `<div class="details-grid"><section class="card"><div class="card-head"><h2>Status</h2></div><div class="card-body"><dl><div class="field"><dt>Application status</dt><dd><span class="status up-to-date">Healthy</span></dd></div><div class="field"><dt>Device status</dt><dd><span class="status ${device.status === 'Unknown' ? 'unknown' : 'up-to-date'}">${device.status === 'Unknown' ? 'Disconnected' : 'Online'}</span></dd></div><div class="field"><dt>Update status</dt><dd>${statusHtml(device)}</dd></div><div class="field"><dt>Integrity status</dt><dd><span class="muted">Not reported</span></dd></div></dl></div></section><section class="card"><div class="card-head"><h2>Device information</h2></div><div class="card-body"><dl><div class="field"><dt>Fleet</dt><dd>${escapeHtml(device.fleet)}</dd></div><div class="field"><dt>Last seen</dt><dd>${device.status === 'Unknown' ? 'Unavailable' : 'A few seconds ago'}</dd></div></dl></div></section></div>`;
-      return `<div class="back-row"><button class="back" id="back-list" type="button">← Back to devices</button></div><div class="details-top"><h1>${escapeHtml(device.id)}</h1><span class="muted">${escapeHtml(device.fleet)}</span></div><div class="tabs" role="tablist" aria-label="Device details"><button type="button" role="tab" id="tab-overview" aria-selected="${state.tab === 'overview'}" class="${state.tab === 'overview' ? 'active' : ''}">Overview</button><button type="button" role="tab" id="tab-events" aria-selected="${state.tab === 'events'}" class="${state.tab === 'events' ? 'active' : ''}">Events</button></div>${panel}`;
+      return `<div class="back-row"><button class="back" id="back-list" type="button">Devices</button> / ${escapeHtml(device.id)}</div><div class="details-top"><h1>${escapeHtml(device.id)}</h1><span class="muted">Last seen: ${device.status === 'Unknown' ? 'Unavailable' : 'A few seconds ago'}</span><span class="muted">⋮ Actions</span></div><div class="tabs" role="tablist" aria-label="Device details"><button type="button" role="tab" id="tab-overview" aria-selected="${state.tab === 'overview'}" class="${state.tab === 'overview' ? 'active' : ''}">Details</button><button type="button" disabled>Catalog</button><button type="button" disabled>YAML</button><button type="button" disabled>Terminal</button><button type="button" disabled>Logs</button><button type="button" role="tab" id="tab-events" aria-selected="${state.tab === 'events'}" class="${state.tab === 'events' ? 'active' : ''}">Events</button></div>${panel}`;
     }
 
     function render() {
@@ -179,8 +198,13 @@
         button.setAttribute('aria-expanded', String(open));
       }));
       document.querySelectorAll('[data-device]').forEach((button) => button.addEventListener('click', () => { state.selected = button.dataset.device; state.view = 'detail'; state.tab = 'overview'; render(); content.focus(); }));
-      document.getElementById('status-filter')?.addEventListener('change', (event) => { state.statusFilter = event.target.value; state.page = 1; render(); });
-      document.getElementById('stage-filter')?.addEventListener('change', (event) => { state.stageFilter = event.target.value; state.page = 1; render(); });
+      document.getElementById('combined-filter')?.addEventListener('change', (event) => {
+        const [kind, value] = event.target.value.split(':');
+        state.statusFilter = kind === 'status' ? value : 'all';
+        state.stageFilter = kind === 'stage' ? value : '';
+        state.page = 1;
+        render();
+      });
       document.getElementById('prev-page')?.addEventListener('click', () => { state.page -= 1; render(); });
       document.getElementById('next-page')?.addEventListener('click', () => { state.page += 1; render(); });
       document.getElementById('back-list')?.addEventListener('click', () => { state.view = 'list'; render(); content.focus(); });
